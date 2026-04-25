@@ -1,0 +1,156 @@
+# ─────────────────────────────────────────────
+# Go
+# ─────────────────────────────────────────────
+
+# Compiled binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Build output (binaries from `go build`)
+/bin/
+/dist/
+/build/
+payroll-service
+payroll-cli
+payroll-server
+
+# Test binaries and output
+*.test
+*.out
+coverage.out
+coverage.html
+*.prof
+
+# Go workspace file (only used in multi-module setups)
+go.work
+go.work.sum
+
+# Dependency directory (only used with vendoring)
+/vendor/
+
+# ─────────────────────────────────────────────
+# Environment & secrets
+# ─────────────────────────────────────────────
+
+# Local env files — never commit these
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# Credentials and keys
+*.pem
+*.key
+*.crt
+secrets/
+
+# ─────────────────────────────────────────────
+# Database
+# ─────────────────────────────────────────────
+
+# Local database files (if you experiment with SQLite)
+*.db
+*.sqlite
+*.sqlite3
+
+# PostgreSQL data directory if mounted locally
+/pgdata/
+/postgres-data/
+
+# Database dumps
+*.sql.bak
+*.dump
+
+# ─────────────────────────────────────────────
+# Docker
+# ─────────────────────────────────────────────
+
+# Docker compose override (often contains local-only config)
+docker-compose.override.yml
+
+# ─────────────────────────────────────────────
+# IDE & editor
+# ─────────────────────────────────────────────
+
+# VS Code
+.vscode/
+!.vscode/settings.json.example
+
+# JetBrains (GoLand, IntelliJ)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim / Neovim
+*.swp
+*.swo
+*~
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+# ─────────────────────────────────────────────
+# OS
+# ─────────────────────────────────────────────
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ─────────────────────────────────────────────
+# Logs & temporary files
+# ─────────────────────────────────────────────
+
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
+# ─────────────────────────────────────────────
+# Tooling caches
+# ─────────────────────────────────────────────
+
+# golangci-lint
+.golangci-lint-cache/
+
+# Air (live reload tool, in case you use it)
+tmp/
+.air.toml.local
+
+# ─────────────────────────────────────────────
+# Project-specific
+# ─────────────────────────────────────────────
+
+# Local notes / scratch files
+NOTES.md
+TODO.local.md
+scratch/
+
+# Generated documentation (if any)
+/docs/generated/
