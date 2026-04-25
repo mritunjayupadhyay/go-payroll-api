@@ -142,3 +142,12 @@ Don't suggest features from a later milestone unless the author asks. If a fix o
 - Concise responses. Code with brief explanation beats long explanation with no code.
 - When uncertain about the right approach, present 2 options with tradeoffs rather than picking arbitrarily.
 - README and code comments should be honest — this is a learning project, and that framing is fine to acknowledge.
+
+
+## Build plan
+
+The full milestone-by-milestone plan lives in `BUILD_PLAN.md` in the repo root.
+Before suggesting changes or features, check which milestone the user is currently
+working on. Don't suggest features from later milestones unless explicitly asked.
+If a small improvement is technically from a later milestone, mention it briefly
+rather than implementing it silently.
