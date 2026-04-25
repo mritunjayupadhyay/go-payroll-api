@@ -168,27 +168,29 @@ curl -X POST http://localhost:8080/api/payslips/calculate \
 Response:
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
   "employee_name": "Jane Doe",
   "gross_pay": 1000.00,
   "federal_tax": 120.00,
   "social_security": 62.00,
   "medicare": 14.50,
-  "net_pay": 803.50,
-  "calculated_at": "2026-04-25T10:30:00Z"
+  "net_pay": 803.50
 }
 ```
 
-### Retrieve a payslip
+Validation errors return `400` with a JSON body of the form `{"error": "..."}`. The endpoint rejects:
+
+- empty or missing `name`
+- `hourly_rate` ≤ 0
+- negative `hours_worked` (zero is allowed)
+- malformed JSON
+
+Persistence and retrieval endpoints (`GET /api/payslips/:id`, `GET /api/employees/:id/payslips`) arrive in Milestone 3.
+
+### Run the server
 
 ```bash
-curl http://localhost:8080/api/payslips/{id}
-```
-
-### List payslips for an employee
-
-```bash
-curl http://localhost:8080/api/employees/{id}/payslips
+go run ./cmd/server
+# server listens on :8080
 ```
 
 ---
@@ -283,8 +285,8 @@ go test -cover ./...            # with coverage
 
 - [x] Core calculation logic with unit tests
 - [x] REST API with input validation
-- [x] PostgreSQL persistence
-- [x] Dockerized deployment
+- [ ] PostgreSQL persistence
+- [ ] Dockerized deployment
 - [ ] Kubernetes manifests for local cluster
 - [ ] Structured logging with request tracing
 - [ ] Configurable tax rates via environment / config file

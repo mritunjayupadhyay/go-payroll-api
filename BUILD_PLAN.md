@@ -58,9 +58,9 @@ Time budget: ~2-3 hours/day, more on weekends. Total: ~15-20 hours over 7 days.
 
 Mark milestones complete as you finish them.
 
-- [ ] **M0** — Setup
-- [ ] **M1** — CLI with core payroll calculation
-- [ ] **M2** — REST API
+- [x] **M0** — Setup
+- [x] **M1** — CLI with core payroll calculation
+- [x] **M2** — REST API
 - [ ] **M3** — PostgreSQL persistence
 - [ ] **M4** — Docker
 - [ ] **M5** — Polish (README, structured logging, CI)
