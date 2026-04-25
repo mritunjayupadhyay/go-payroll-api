@@ -66,10 +66,18 @@ The project follows a layered architecture: HTTP handlers are thin and delegate 
 │   ├── payroll/          # Core calculation logic
 │   │   ├── calculator.go
 │   │   └── calculator_test.go
-│   ├── handlers/         # HTTP handlers
-│   │   └── payslips.go
-│   └── storage/          # Database access
-│       └── postgres.go
+│   ├── handlers/         # HTTP handlers (Gin)
+│   │   ├── api.go            # API struct + consumer-side store interface
+│   │   ├── router.go
+│   │   ├── employee.go
+│   │   ├── payslip.go
+│   │   ├── health.go
+│   │   ├── dto.go            # Request/response DTOs + dollar↔cent conversion
+│   │   ├── *_test.go
+│   │   └── store_fake_test.go # In-memory fake for handler tests
+│   └── storage/          # PostgreSQL persistence (pgx/v5)
+│       ├── postgres.go
+│       └── postgres_test.go  # Integration tests, gated by -short / TEST_DATABASE_URL
 ├── migrations/
 │   └── 001_init.sql      # Database schema
 ├── deploy/
@@ -123,20 +131,31 @@ docker run --name payroll-db \
   -p 5432:5432 \
   -d postgres:16
 
-# Run migrations
-psql -h localhost -U postgres -d payroll -f migrations/001_init.sql
+# Apply the schema (psql lives in the container, so no host install needed)
+docker exec -i payroll-db psql -U postgres -d payroll < migrations/001_init.sql
 
-# Run the server
-go run ./cmd/server
+# Run the server (reads DATABASE_URL from the environment)
+DATABASE_URL='postgres://postgres:password@localhost:5432/payroll?sslmode=disable' \
+  go run ./cmd/server
 ```
 
 ### Running tests
 
 ```bash
-go test ./...
-go test -v ./internal/payroll  # Verbose, single package
-go test -cover ./...           # With coverage
+# Fast suite — handler tests use an in-memory fake store, no DB required.
+go test -short ./...
+
+# Full suite — runs the storage integration tests against a real Postgres.
+docker exec payroll-db psql -U postgres -c 'CREATE DATABASE payroll_test;'
+TEST_DATABASE_URL='postgres://postgres:password@localhost:5432/payroll_test?sslmode=disable' \
+  go test ./...
+
+# Coverage
+go test -cover ./...
 ```
+
+The storage package's `TestMain` re-applies `migrations/001_init.sql` on each
+run, and each test truncates with `RESTART IDENTITY` for a clean slate.
 
 ---
 
@@ -153,43 +172,83 @@ Response:
 { "status": "ok" }
 ```
 
-### Calculate a payslip
+### Create an employee
+
+```bash
+curl -X POST http://localhost:8080/api/employees \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Jane Doe", "hourly_rate": 25.00}'
+```
+
+Response (`201 Created`):
+```json
+{
+  "id": 1,
+  "name": "Jane Doe",
+  "hourly_rate": 25,
+  "created_at": "2026-04-26T02:22:35.906633+07:00"
+}
+```
+
+### Get an employee
+
+```bash
+curl http://localhost:8080/api/employees/1
+```
+
+Returns the same shape as `POST /api/employees`. `404` if the employee does not exist.
+
+### Calculate and persist a payslip
 
 ```bash
 curl -X POST http://localhost:8080/api/payslips/calculate \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Jane Doe",
-    "hourly_rate": 25.00,
-    "hours_worked": 40
-  }'
+  -d '{"employee_id": 1, "hours_worked": 40}'
 ```
 
-Response:
+Response (`201 Created`):
 ```json
 {
-  "employee_name": "Jane Doe",
-  "gross_pay": 1000.00,
-  "federal_tax": 120.00,
-  "social_security": 62.00,
-  "medicare": 14.50,
-  "net_pay": 803.50
+  "id": 1,
+  "employee_id": 1,
+  "hours_worked": 40,
+  "gross_pay": 1000,
+  "federal_tax": 120,
+  "social_security": 62,
+  "medicare": 14.5,
+  "net_pay": 803.5,
+  "created_at": "2026-04-26T02:22:36.004076+07:00"
 }
 ```
 
-Validation errors return `400` with a JSON body of the form `{"error": "..."}`. The endpoint rejects:
+The endpoint:
+- Looks up the employee (`404` if not found)
+- Computes the payslip from the employee's stored `hourly_rate` and the request's `hours_worked`
+- Persists the result and returns it with its new ID
 
-- empty or missing `name`
-- `hourly_rate` ≤ 0
-- negative `hours_worked` (zero is allowed)
-- malformed JSON
+Validation errors return `400 {"error": "..."}` for: missing/zero `employee_id`, negative `hours_worked`, or malformed JSON.
 
-Persistence and retrieval endpoints (`GET /api/payslips/:id`, `GET /api/employees/:id/payslips`) arrive in Milestone 3.
+### Get a payslip by ID
+
+```bash
+curl http://localhost:8080/api/payslips/1
+```
+
+Returns the same shape as the calculate response. `404` if not found.
+
+### List payslips for an employee
+
+```bash
+curl http://localhost:8080/api/employees/1/payslips
+```
+
+Returns an array of payslips for that employee, ordered by `created_at` descending. Always returns `[]` (not `null`) when empty.
 
 ### Run the server
 
 ```bash
-go run ./cmd/server
+DATABASE_URL='postgres://postgres:password@localhost:5432/payroll?sslmode=disable' \
+  go run ./cmd/server
 # server listens on :8080
 ```
 
@@ -285,7 +344,7 @@ go test -cover ./...            # with coverage
 
 - [x] Core calculation logic with unit tests
 - [x] REST API with input validation
-- [ ] PostgreSQL persistence
+- [x] PostgreSQL persistence with migrations and integration tests
 - [ ] Dockerized deployment
 - [ ] Kubernetes manifests for local cluster
 - [ ] Structured logging with request tracing

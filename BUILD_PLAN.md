@@ -61,7 +61,7 @@ Mark milestones complete as you finish them.
 - [x] **M0** — Setup
 - [x] **M1** — CLI with core payroll calculation
 - [x] **M2** — REST API
-- [ ] **M3** — PostgreSQL persistence
+- [x] **M3** — PostgreSQL persistence
 - [ ] **M4** — Docker
 - [ ] **M5** — Polish (README, structured logging, CI)
 - [ ] **M6** — Kubernetes (optional)
