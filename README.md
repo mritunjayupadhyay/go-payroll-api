@@ -209,22 +209,60 @@ A real payroll system would account for filing status, exemptions, year-to-date 
 
 ## CLI Usage
 
-In addition to the HTTP API, the project includes a CLI for quick local calculations:
+The project ships a small CLI that runs the calculation locally — no HTTP, no database. Useful as a quick sanity check and as a demonstration of the core logic in isolation.
+
+### Run directly with `go run`
 
 ```bash
-go run ./cmd/cli -name="Jane Doe" -rate=25 -hours=40
+go run ./cmd/cli -name="Jane" -rate=25 -hours=40
 ```
 
 Output:
 ```
-Payslip for Jane Doe
-─────────────────────
-Gross Pay:         $1000.00
-Federal Tax:       $ 120.00
-Social Security:   $  62.00
-Medicare:          $  14.50
-─────────────────────
-Net Pay:           $ 803.50
+Payslip for Jane
+  Gross:           $1000.00
+  Federal Tax:     $120.00
+  Social Security: $62.00
+  Medicare:        $14.50
+  Net:             $803.50
+```
+
+### Build a standalone binary
+
+Go compiles to a single static binary with no runtime dependency.
+
+```bash
+go build -o bin/payroll-cli ./cmd/cli
+./bin/payroll-cli -name="Jane" -rate=25 -hours=40
+```
+
+The binary is self-contained — copy it anywhere and run it.
+
+### Flags
+
+| Flag      | Type    | Description                       |
+|-----------|---------|-----------------------------------|
+| `-name`   | string  | Employee name (required)          |
+| `-rate`   | float64 | Hourly rate in dollars (required, > 0) |
+| `-hours`  | float64 | Hours worked (required, ≥ 0)      |
+
+### Validation errors
+
+Bad input is rejected with a stderr message and exit code 1:
+
+```bash
+$ go run ./cmd/cli -rate=25 -hours=40
+error: name is required
+$ echo $?
+1
+```
+
+### Running the tests
+
+```bash
+go test ./...                   # all packages
+go test -v ./internal/payroll   # verbose, calculator only
+go test -cover ./...            # with coverage
 ```
 
 ---
