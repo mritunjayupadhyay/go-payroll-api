@@ -3,12 +3,20 @@
 // and storage domain types.
 package handlers
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+
+	"github.com/mritunjayupadhyay/go-payroll-api/internal/middleware"
+)
 
 // NewRouter returns a fully configured Gin engine. Tests use this with
 // httptest; cmd/server uses it as the application root.
+//
+// gin.New (not gin.Default) so we pick the middleware: structured access
+// logs via slog, plus Gin's recovery to convert panics into 500s.
 func NewRouter(api *API) *gin.Engine {
-	r := gin.Default()
+	r := gin.New()
+	r.Use(middleware.AccessLog(api.logger), gin.Recovery())
 
 	r.GET("/health", Health)
 

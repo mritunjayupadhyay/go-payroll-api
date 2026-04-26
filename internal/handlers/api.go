@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"io"
+	"log/slog"
 
 	"github.com/mritunjayupadhyay/go-payroll-api/internal/payroll"
 	"github.com/mritunjayupadhyay/go-payroll-api/internal/storage"
@@ -21,12 +23,17 @@ type payslipStore interface {
 
 // API groups the HTTP handlers and their shared dependencies.
 type API struct {
-	store payslipStore
+	store  payslipStore
+	logger *slog.Logger
 }
 
 // New returns an API backed by the given store. Any value satisfying the
 // payslipStore interface works — *storage.PostgresStorage in production,
-// an in-memory fake in tests.
-func New(store payslipStore) *API {
-	return &API{store: store}
+// an in-memory fake in tests. A nil logger falls back to a discard logger
+// so tests don't spam stdout.
+func New(store payslipStore, logger *slog.Logger) *API {
+	if logger == nil {
+		logger = slog.New(slog.NewJSONHandler(io.Discard, nil))
+	}
+	return &API{store: store, logger: logger}
 }

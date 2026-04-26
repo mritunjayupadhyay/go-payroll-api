@@ -20,7 +20,7 @@ func TestMain(m *testing.M) {
 // newTestRouter wires a fresh fake store + router so each test is isolated.
 func newTestRouter() (*gin.Engine, *fakeStore) {
 	store := newFakeStore()
-	return NewRouter(New(store)), store
+	return NewRouter(New(store, nil)), store
 }
 
 func doJSON(t *testing.T, r http.Handler, method, path, body string) *httptest.ResponseRecorder {
