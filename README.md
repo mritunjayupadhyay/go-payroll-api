@@ -79,11 +79,12 @@ The project follows a layered architecture: HTTP handlers are thin and delegate 
 │       ├── postgres.go
 │       └── postgres_test.go  # Integration tests, gated by -short / TEST_DATABASE_URL
 ├── migrations/
-│   └── 001_init.sql      # Database schema
+│   └── 001_init.sql      # Database schema (also auto-applied on first DB boot via compose)
 ├── deploy/
-│   ├── docker-compose.yml
-│   └── k8s/              # Kubernetes manifests (optional)
-├── Dockerfile
+│   └── k8s/              # Kubernetes manifests (optional, Milestone 6)
+├── Dockerfile            # Multi-stage build: golang:1.26-alpine → distroless static
+├── docker-compose.yml    # Local dev stack: app + Postgres
+├── .dockerignore
 ├── go.mod
 ├── go.sum
 ├── .env.example
@@ -94,15 +95,44 @@ The project follows a layered architecture: HTTP handlers are thin and delegate 
 
 ## Quick Start (Docker)
 
-The fastest way to run the service:
+The fastest way to run the service. You need Docker Desktop (or Docker Engine + Compose v2).
 
 ```bash
-git clone https://github.com/yourusername/payroll-service.git
-cd payroll-service
-docker-compose up --build
+git clone https://github.com/mritunjayupadhyay/go-payroll-api.git
+cd go-payroll-api
+docker compose up --build
 ```
 
-The API will be available at `http://localhost:8080`.
+That starts two containers:
+
+- `db` — Postgres 16, with `migrations/001_init.sql` auto-applied on first boot
+- `app` — the API on `http://localhost:8080`, waits for the DB healthcheck before starting
+
+Sanity check from another terminal:
+
+```bash
+curl http://localhost:8080/health
+# {"status":"ok"}
+
+curl -X POST http://localhost:8080/api/employees \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Jane Doe","hourly_rate":25.00}'
+
+curl -X POST http://localhost:8080/api/payslips/calculate \
+  -H 'Content-Type: application/json' \
+  -d '{"employee_id":1,"hours_worked":40}'
+```
+
+Tear-down:
+
+```bash
+docker compose down       # stop containers, keep DB data in the named volume
+docker compose down -v    # also wipe the DB volume (next `up` re-applies migrations from scratch)
+```
+
+**Image:** the runtime stage is built on `gcr.io/distroless/static-debian12:nonroot`. The final image is ~25 MB and runs as a non-root user with no shell or package manager.
+
+**Note on migrations in compose:** `migrations/` is mounted into Postgres' `/docker-entrypoint-initdb.d`, which runs the SQL files exactly once on a fresh data directory. This is intentionally simple for local dev — a production deployment would use a real migration tool (e.g. `golang-migrate`, `goose`).
 
 ---
 
@@ -345,7 +375,7 @@ go test -cover ./...            # with coverage
 - [x] Core calculation logic with unit tests
 - [x] REST API with input validation
 - [x] PostgreSQL persistence with migrations and integration tests
-- [ ] Dockerized deployment
+- [x] Dockerized deployment (multi-stage build, docker-compose)
 - [ ] Kubernetes manifests for local cluster
 - [ ] Structured logging with request tracing
 - [ ] Configurable tax rates via environment / config file

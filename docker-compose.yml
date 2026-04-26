@@ -1,0 +1,37 @@
+# Local dev stack: Postgres + the API, wired together.
+# Run with: `docker compose up --build`
+# Tear down (and wipe the DB volume) with: `docker compose down -v`
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: payroll
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Anything in /docker-entrypoint-initdb.d is executed once, on the very
+      # first boot of an empty data directory. Perfect for dev; for prod we'd
+      # want a real migration tool.
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d payroll"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/payroll?sslmode=disable
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

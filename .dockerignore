@@ -1,0 +1,49 @@
+# Keep the build context small and avoid leaking local state into the image.
+
+# VCS
+.git
+.gitignore
+.gitattributes
+
+# Local environment & secrets
+.env
+.env.*
+!.env.example
+
+# Build output
+bin/
+dist/
+build/
+*.test
+*.out
+coverage.out
+coverage.html
+*.prof
+
+# Editor / IDE
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs & planning (not needed inside the image)
+README.md
+BUILD_PLAN.md
+CLAUDE.md
+NOTES.md
+TODO.local.md
+
+# Containerization (not needed inside the build context for the binary itself)
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
+
+# Postgres data, just in case it ever lives in-tree
+pgdata/
+postgres-data/
